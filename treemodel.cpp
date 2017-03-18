@@ -31,11 +31,11 @@ QVariant TreeModel::data(const QModelIndex &index, int role) const
 
     if (role != Qt::DisplayRole)
     {
-	if (role == Qt::ForegroundRole ) 
-	    return item->getHeadingColor();
-	//if (role == Qt::BackgroundRole )  // does not look nice
-	//  return item->getBackgroundColor();
-	return QVariant();
+        if (role == Qt::ForegroundRole )
+            return item->getHeadingColor();
+        //if (role == Qt::BackgroundRole )  // does not look nice
+        //  return item->getBackgroundColor();
+        return QVariant();
     }	
 
 
@@ -62,9 +62,9 @@ QVariant TreeModel::headerData(int section, Qt::Orientation orientation,
 QModelIndex TreeModel::index (TreeItem* ti)
 {
     if (!ti->parent())
-	return QModelIndex();
+        return QModelIndex();
     else    
-	return createIndex (ti->row(),0,ti);
+        return createIndex (ti->row(),0,ti);
 }
 
 QModelIndex TreeModel::index(int row, int column, const QModelIndex &parent)
@@ -282,7 +282,7 @@ bool TreeModel::removeRows ( int row, int count, const QModelIndex & parent)
 TreeItem *TreeModel::getItem(const QModelIndex &index) const
 {
     if (index.isValid()) {
-	TreeItem *item = static_cast<TreeItem*>(index.internalPointer());
+        TreeItem *item = static_cast<TreeItem*>(index.internalPointer());
         if (item) return item;
     }
     return NULL;

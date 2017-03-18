@@ -6,6 +6,7 @@
 #include <QPrinter>
 #include <QPrintDialog>
 #include <QScrollBar>
+#include <QXmlStreamReader>
 
 #include "branchitem.h"
 #include "geometry.h"
@@ -1881,10 +1882,11 @@ void MapEditor::dragEnterEvent(QDragEnterEvent *event)
     //	cerr << event->format(i) << endl;
 
     if (event->mimeData()->hasImage())
-	event->acceptProposedAction();
-    else    
-	if (event->mimeData()->hasUrls())
+		event->acceptProposedAction();
+    else if (event->mimeData()->hasUrls())
 	    event->acceptProposedAction();
+	else if (event->mimeData()->hasFormat("application/x-qt-windows-mime;value=\"EN Notes\""))
+		event->acceptProposedAction();
 }
 
 void MapEditor::dragMoveEvent(QDragMoveEvent *)
@@ -1939,6 +1941,85 @@ void MapEditor::dropEvent(QDropEvent *event)
 
     } else
     */
+		QStringList formats = event->mimeData()->formats();
+		for (QStringList::const_iterator f = formats.constBegin(); f != formats.constEnd(); ++f)
+		{
+			OutputDebugString(f->toStdWString().c_str());
+			OutputDebugString(L"\n");
+		}
+			//OutputDebugStringA("xxx");
+
+
+		if (event->mimeData()->hasFormat("application/x-qt-windows-mime;value=\"EN Notes\""))
+		{
+			const QMimeData *md = event->mimeData();
+
+			QString html = md->html();
+			QString text = md->text();
+			
+			
+			QByteArray data1 = md->data("application/x-qt-windows-mime;value=\"DragImageBits\"");
+			QByteArray data2 = md->data("application/x-qt-windows-mime;value=\"DragContext\"");
+			QByteArray data3 = md->data("application/x-qt-windows-mime;value=\"EN Drag Context\"");
+			QByteArray data4 = md->data("application/x-qt-windows-mime;value=\"EN Notes\"");
+			QByteArray data5 = md->data("application/x-qt-windows-mime;value=\"FileGroupDescriptorW\"");
+			QByteArray data6 = md->data("application/x-qt-windows-mime;value=\"FileGroupDescriptor\"");
+			QByteArray data7 = md->data("application/x-qt-windows-mime;value=\"FileContents\"");
+
+            //QString DataAsString = QTextCodec::codecForMib(106)->toUnicode(data7.mid(0,10)); // to Utf8
+            QString DataAsString = QTextCodec::codecForMib(106)->toUnicode(data7); // to Utf8
+			OutputDebugString(DataAsString.toStdWString().c_str());
+
+			DataAsString = QTextCodec::codecForMib(106)->toUnicode(data1);
+			OutputDebugString(DataAsString.toStdWString().c_str());
+			DataAsString = QTextCodec::codecForMib(106)->toUnicode(data2);
+			OutputDebugString(DataAsString.toStdWString().c_str());
+			DataAsString = QTextCodec::codecForMib(106)->toUnicode(data3);
+			OutputDebugString(DataAsString.toStdWString().c_str());
+			DataAsString = QTextCodec::codecForMib(106)->toUnicode(data4);
+			OutputDebugString(DataAsString.toStdWString().c_str());
+			DataAsString = QTextCodec::codecForMib(106)->toUnicode(data5);
+			OutputDebugString(DataAsString.toStdWString().c_str());
+			DataAsString = QTextCodec::codecForMib(106)->toUnicode(data6);
+			OutputDebugString(DataAsString.toStdWString().c_str());
+
+
+
+            QXmlStreamReader xmlReader (data7);
+            while(!xmlReader.atEnd())
+            {
+                QXmlStreamReader::TokenType token = xmlReader.readNext();
+
+                if(xmlReader.name() == "title" && token == QXmlStreamReader::StartElement)
+                {
+                    xmlReader.readNext();
+
+                    QString noteName = xmlReader.text().toString();
+
+                    BranchItem* bi = model->addNewBranch();
+
+                    //BranchItem* bi = model->addMapCenter();
+
+                    if(bi)
+                    {
+                        model->select(bi);
+
+                        //QString url ("C:/Program Files (x86)/Evernote/Evernote/ENScript.exe");
+                        //url.append(" showNotes /q ");
+                        QString url("ENScript ");
+                        url.append(noteName);
+
+                        model->setURL(url);
+                        model->setHeadingPlainText(noteName);
+
+                        model->select (bi->parent());
+                    }
+                }
+
+            }
+		}
+
+
         if (event->mimeData()->hasUrls())
         {
             //model->selectLastBranch();

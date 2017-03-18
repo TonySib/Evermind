@@ -36,7 +36,7 @@ TreeItem::TreeItem(const QList<QVariant> &data, TreeItem *parent)
     
     rootItem=this;
     if (parentItem )
-	rootItem=parentItem->rootItem;
+        rootItem=parentItem->rootItem;
 }
 
 TreeItem::~TreeItem()
@@ -416,27 +416,42 @@ QColor TreeItem::getBackgroundColor()
 
 void TreeItem::setURL (const QString &u)
 {
-    url=u;
+    url = u;
     if (!url.isEmpty())
     {
-	if (url.contains ("bugzilla.novell.com"))
-	{
-	    systemFlags.activate ("system-url-bugzilla-novell");
-	    if (systemFlags.isActive ("system-url"))
-		systemFlags.deactivate ("system-url");
-	} else
-	{
-	    systemFlags.activate ("system-url");
-	    if (systemFlags.isActive ("system-url-bugzilla-novell"))
-		systemFlags.deactivate ("system-url-bugzilla-novell");
-	}
+        if (url.contains ("bugzilla.novell.com"))
+        {
+            systemFlags.activate ("system-url-bugzilla-novell");
+            if (systemFlags.isActive ("system-url"))
+                systemFlags.deactivate ("system-url");
+            if (systemFlags.isActive ("system-url-enscript"))
+                systemFlags.deactivate ("system-url-enscript");
+        }
+        else if(url.contains("ENScript"))
+        {
+            systemFlags.activate("system-url-enscript");
+            if (systemFlags.isActive ("system-url"))
+                systemFlags.deactivate ("system-url");
+            if (systemFlags.isActive ("system-url-bugzilla-novell"))
+                systemFlags.deactivate ("system-url-bugzilla-novell");
+        }
+        else
+        {
+            systemFlags.activate ("system-url");
+            if (systemFlags.isActive ("system-url-bugzilla-novell"))
+                systemFlags.deactivate ("system-url-bugzilla-novell");
+            if (systemFlags.isActive ("system-url-enscript"))
+                systemFlags.deactivate ("system-url-enscript");
+        }
     }
     else
     {
-	if (systemFlags.isActive ("system-url"))
-	    systemFlags.deactivate ("system-url");
-	if (systemFlags.isActive ("system-url-bugzilla-novell"))
-	    systemFlags.deactivate ("system-url-bugzilla-novell");
+        if (systemFlags.isActive ("system-url"))
+            systemFlags.deactivate ("system-url");
+        if (systemFlags.isActive ("system-url-bugzilla-novell"))
+            systemFlags.deactivate ("system-url-bugzilla-novell");
+        if (systemFlags.isActive ("system-url-enscript"))
+            systemFlags.deactivate ("system-url-enscript");
     }
 }
 

@@ -2,6 +2,7 @@
 
 #include <iostream>
 #include <typeinfo>
+#include <memory>
 
 #ifndef Q_OS_WIN
 #include <unistd.h>
@@ -51,6 +52,12 @@
 #include "version.h"
 #include "warningdialog.h"
 #include "xlinkitem.h"
+
+#include "evernoteauth.h"
+#include "evernoteauthdata.h"
+
+#include "../../QEverCloud-master/QEverCloud/headers/QEverCloud.h"
+#include "../../QEverCloud-master/QEverCloud/headers/QEverCloudOAuth.h"
 
 QPrinter *printer;
 
@@ -1107,7 +1114,16 @@ void Main::setupFileActions()
 
     fileMenu->addSeparator();
 
-    a = new QAction(QPixmap( ":/fileprint.png"), tr( "&Print")+QString("..."), this);
+    a = new QAction( QPixmap(":/en_small.png"), tr( "Save to Evernote"), this);
+    switchboard.addSwitch ("fileSaveToEvernote", shortcutScope, a, tag);
+    connect( a, SIGNAL( triggered() ), this, SLOT( fileSaveToEvernote() ) );
+    fileMenu->addAction(a);
+    actionListFiles.append (a);
+    //actionEvernoteSettings = a;
+
+    fileMenu->addSeparator();
+
+    a = new QAction(QPixmap(":/fileprint.png"), tr( "&Print")+QString("..."), this);
     a->setShortcut ( Qt::CTRL + Qt::Key_P);
     switchboard.addSwitch ("fileMapPrint", shortcutScope, a, tag);
     connect( a, SIGNAL( triggered() ), this, SLOT( filePrint() ) );
@@ -2237,6 +2253,9 @@ void Main::setupFlagActions()
 
     flag=new Flag(":/flag-url.png");
     setupFlag (flag,NULL,"system-url",tr("URL to Document ","SystemFlag"));
+
+    flag=new Flag(":/flag-url-enscript.png");
+    setupFlag (flag,NULL,"system-url-enscript",tr("URL to ENScript ","SystemFlag"));
 
     flag=new Flag(":/flag-url-bugzilla-novell.png");
     setupFlag (flag,NULL,"system-url-bugzilla-novell",tr("URL to Bugzilla ","SystemFlag"));
@@ -3867,7 +3886,47 @@ bool Main::openURL(const QString &url)
 
     QString browser=settings.value("/system/readerURL" ).toString();
     QStringList args;
-    args<<url;
+    //args<<url;
+	// TODO: Parse url and add args here. Searching for the last . and then splitting args by spaces
+
+//    int dotIndex = url.lastIndexOf('.');
+//    bool commandSplitted = false;
+
+//    if(dotIndex != -1)
+//    {
+//        int spaceIndex = url.indexOf(" ", dotIndex);
+
+//        if (spaceIndex != -1)
+//        {
+//            QString tail = url.right(url.length() - spaceIndex - 1);
+//            QStringList parts = tail.split(" ");
+
+//            //args << url.left(spaceIndex);
+//            browser = url.left(spaceIndex);
+
+//            for(int i=0; i<parts.size(); ++i)
+//                args << parts[i];
+
+//            commandSplitted = true;
+//        }
+//    }
+
+//    if(!commandSplitted)
+//        args << url;
+
+    if(url.contains("ENScript"))
+    {
+        int spaceIndex = url.indexOf(" ");
+        QString tail = url.right(url.length() - spaceIndex - 1);
+
+        browser = "C:/Program Files (x86)/Evernote/Evernote/ENScript.exe";
+        args << "showNotes";
+        args << "/q";
+        args << tail;
+    }
+    else
+        args << url;
+
     if (!QProcess::startDetached(browser,args,QDir::currentPath(),browserPID))
     {
         // try to set path to browser
@@ -3990,17 +4049,21 @@ void Main::editURL()
     VymModel *m=currentModel();
     if (m) 
     {
-	QInputDialog *dia=new QInputDialog (this);
-	dia->setLabelText (tr("Enter URL:"));
-	dia->setWindowTitle (vymName);
-	dia->setInputMode (QInputDialog::TextInput);
-	TreeItem *selti=m->getSelectedItem();
-	if (selti) dia->setTextValue (selti->getURL());
-	dia->resize(width()*0.6,80);
-        centerDialog(dia);
+		QInputDialog *dia=new QInputDialog (this);
+		dia->setLabelText (tr("Enter URL:"));
+		dia->setWindowTitle (vymName);
+		dia->setInputMode (QInputDialog::TextInput);
+		
+		TreeItem *selti=m->getSelectedItem();
+		if (selti) 
+			dia->setTextValue (selti->getURL());
+		dia->resize(width()*0.6,80);
+		centerDialog(dia);
 
-	if ( dia->exec() ) m->setURL (dia->textValue() );
-        delete dia;
+		if ( dia->exec() ) 
+			m->setURL (dia->textValue() );
+		
+		delete dia;
     }
 }
 
@@ -4315,6 +4378,367 @@ void Main::editMapProperties()
 	m->setAuthor (dia.getAuthor() );
 	m->setComment (dia.getComment() );
 	m->setTitle (dia.getMapTitle() );
+    }
+}
+
+
+void findAllEnNotes(BranchItem* item, QList<QString>& res)
+{
+    // Iterating over branches looking for evernote refs
+    for(int i=0; i<item->branchCount(); i++)
+    {
+        if(item->getBranchNum(i)->getURL().contains("ENScript"))
+            res.append(item->getBranchNum(i)->getURL().mid(9, item->getBranchNum(i)->getURL().size()-9));
+
+        findAllEnNotes(item->getBranchNum(i), res);
+    }
+}
+
+
+void Main::fileSaveToEvernote()
+{
+    VymModel* model = currentModel();
+
+    // Retrieving auth data from program options
+    QString noteStoreUrl = settings.value("/evernote/noteStoreUrl").toString();
+    QString authToken = settings.value("/evernote/authenticationToken").toString();
+
+    bool needAuth = true;
+
+    if(!noteStoreUrl.isEmpty() && !authToken.isEmpty())
+    {
+        std::unique_ptr<qevercloud::NoteStore> ns(new qevercloud::NoteStore(noteStoreUrl, authToken));
+
+        // TODO: How to check that authorization is needed?
+        //qevercloud::SyncState syncState = ns->getSyncState(authToken);
+
+        // if(syncState)
+        //needAuth = false;
+    }
+
+    if(needAuth)
+    {
+        qevercloud::EvernoteOAuthDialog authDlg(CONSUMER_KEY, CONSUMER_SECRET, EVERNOTE_SRV_URL);
+        int res = authDlg.exec();
+
+        if(res != QDialog::Accepted)
+            return;
+
+        noteStoreUrl = authDlg.oauthResult().noteStoreUrl;
+        authToken = authDlg.oauthResult().authenticationToken;
+
+        // Saving auth data to program options
+        settings.setValue ("/evernote/noteStoreUrl", noteStoreUrl);
+        settings.setValue ("/evernote/authenticationToken", authToken);
+     }
+
+
+    std::unique_ptr<qevercloud::NoteStore> ns(new qevercloud::NoteStore(noteStoreUrl, authToken));
+
+    // TODO: message if file isn't saved
+    fileSave();
+
+    bool needUpdateNote = false;
+
+    try
+    {
+        if(!model->getEnNoteGuid().isEmpty())
+        {
+            ns->getNote(model->getEnNoteGuid(), false, false, false, false);
+
+            needUpdateNote = true;
+        }
+    }
+    catch(qevercloud::EDAMNotFoundException &)
+    {
+    }
+    catch(qevercloud::EDAMUserException)
+    {
+    }
+
+
+//        // вставьте сюда свой developer token
+//        // https://www.evernote.com/api/DeveloperToken.action
+//        ns->setAuthenticationToken(authDlg.oauthResult().authenticationToken);
+
+//        // там же узнайте свой NoteStore URL
+//        ns->setNoteStoreUrl(authDlg.oauthResult().noteStoreUrl);
+    if(!needUpdateNote)
+    {
+        qevercloud::Note note;
+        note.title = model->getFileName();
+
+        QPointF offset;
+        QImage img (model->getMapEditor()->getImage(offset));
+
+        // Creation of image resource
+        qevercloud::Resource resImg;
+        resImg.mime = QString("image/png");
+        resImg.height = img.height();
+        resImg.width = img.width();
+
+        qevercloud::Data resImgData;
+        QByteArray byteArr;
+        QBuffer buff(&byteArr);
+        img.save(&buff, "PNG");
+
+        resImgData.body = byteArr;
+        resImgData.size = byteArr.size();
+        resImgData.bodyHash = QCryptographicHash::hash(byteArr, QCryptographicHash::Algorithm::Md5);
+
+        resImg.data = resImgData;
+
+        qevercloud::ResourceAttributes resImgAttrs;
+        resImgAttrs.fileName = model->getFileName();
+        //resImgAttrs.attachment = true;
+
+        resImg.attributes = resImgAttrs;
+
+
+        // Creation of file resource
+        qevercloud::Resource resFile;
+        resFile.mime = QString("application/octet-stream");
+
+        qevercloud::Data resFileData;
+
+        byteArr.clear();
+        QFile file(model->getFilePath());
+        if (file.open(QIODevice::ReadOnly))
+            byteArr = file.readAll();
+
+        resFileData.body = byteArr;
+        resFileData.size = byteArr.size();
+        resFileData.bodyHash = QCryptographicHash::hash(byteArr, QCryptographicHash::Algorithm::Md5);
+
+        resFile.data = resFileData;
+
+        qevercloud::ResourceAttributes resFileAttrs;
+        resFileAttrs.fileName = model->getFileName();
+        resImgAttrs.attachment = true;
+
+        resFile.attributes = resFileAttrs;
+
+
+
+
+
+        QList <qevercloud::Resource> resources;
+        resources.append(resImg);
+        resources.append(resFile);
+
+        note.resources = resources;
+
+        note.content = QString("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n")
+                + "<!DOCTYPE en-note SYSTEM \"http://xml.evernote.com/pub/enml2.dtd\">\n"
+                + "<en-note>"
+                + "<span style=\"vym:tree\">Here put the inner HTML content"
+                + "<div>TODO: mmap represented as tree</div>"
+                + "</span>"
+                + "<en-media type=\"image/png\" hash=\"" + resImgData.bodyHash.ref().toHex() + "\"/>"
+                + "<br/>"
+                + "<en-media type=\"application/octet-stream\" hash=\"" + resFileData.bodyHash.ref().toHex() + "\"/>"
+                + "</en-note>";
+
+        qevercloud::Note noteCreated = ns->createNote(note);
+
+        qevercloud::Guid guidNote = noteCreated.guid;
+        qevercloud::Guid guidImg = noteCreated.resources.ref()[0].guid;
+        qevercloud::Guid guidFile = noteCreated.resources.ref()[1].guid;
+
+        model->setEnNoteGuid(guidNote); // TODO: Drop it in the mmap when saving as. Or use mmap name as additional criterion
+        ns->setResourceApplicationDataEntry(guidImg, "vym-resource", "vym-image", authToken);
+        ns->setResourceApplicationDataEntry(guidFile, "vym-resource", "vym-file", authToken);
+
+        qevercloud::UserStore userStore("sandbox.evernote.com", authToken);
+        qevercloud::User user = userStore.getUser(authToken);
+
+        QString noteLink = QString("evernote:///view/")
+                                   + QString::number(user.id) + "/"
+                                   + user.shardId + "/"
+                                   + noteCreated.guid + "/"
+                                   + noteCreated.guid + "/";
+
+        // TODO: Store GUID in refs??? Cause name of note can be changed at every moment
+        QList<QString> enNotes;
+        findAllEnNotes(model->getRootItem(), enNotes);
+
+        for(int i=0; i<enNotes.size(); ++i)
+        {
+            QString noteName = enNotes[i];
+
+            qevercloud::NoteFilter filter;
+            //filter.words = "showNotes" + " " + "/q" + " " + noteName;
+            //filter.words = QString("/q") + " " + noteName;
+            filter.words = noteName;
+
+            // Empty, cause guid seems to be returned by default
+            qevercloud::NotesMetadataResultSpec resSpec;
+
+            qevercloud::NotesMetadataList searchRes = ns->findNotesMetadata(filter, 0, 1, resSpec);
+
+            if(0 < searchRes.totalNotes)
+            {
+                QString guid = searchRes.notes[0].guid;
+
+                qevercloud::Note noteFound = ns->getNote(guid, true, true, true, true, authToken);
+
+                if(noteFound.title == noteName)
+                {
+
+                    // adding section with ref to note with mind map
+                    QString linkXml = QString("<span style=\"vym:context:")
+                                              + noteCreated.guid
+                                              + "\">"
+                                              + "<a href=\""
+                                              + noteLink
+                                              + "\">"
+                                              + noteCreated.title
+                                              + "</a>"
+                                              + "</span>";
+
+                    bool hasBody = noteFound.content.ref().contains("<en-note>");
+
+                    if(hasBody)
+                        noteFound.content.ref().replace("<en-note>", QString("<en-note>") + linkXml);
+                    else
+                        noteFound.content.ref().replace("<en-note/>", QString("<en-note>") + linkXml + QString("</en-note>"));
+
+                    ns->updateNote(noteFound, authToken);
+                }
+            }
+        }
+    }
+    else
+    {
+        qevercloud::Note note = ns->getNote(model->getEnNoteGuid(), true, true, true, true, authToken);
+
+
+        QString resImgHashOld;
+        QString resFileHashOld;
+
+        if(note.resources.isSet())
+        {
+            // Iterating over resources, looking for resources with special labels
+            // TODO: Save resources guids instead?
+            for(int i=0; i<note.resources.ref().size(); ++i)
+            {
+                try
+                {
+                    QString vymResourceType = ns->getResourceApplicationDataEntry(note.resources.ref()[i].guid, "vym-resource");
+
+                    if(vymResourceType == "vym-image" || vymResourceType == "vym-file")
+                    {
+                        if(vymResourceType == "vym-image")
+                           resImgHashOld = ns->getResource(note.resources.ref()[i].guid, true, true, true, true, authToken).data.ref().bodyHash.ref().toHex();
+                        else if(vymResourceType == "vym-file")
+                          resFileHashOld = ns->getResource(note.resources.ref()[i].guid, true, true, true, true, authToken).data.ref().bodyHash.ref().toHex();
+
+                        //resImage = ns->getResource(note.resources.ref()[i].guid);
+
+                        // erasing note
+                        // TODO: Must do!!! Cause there can be additional resources!!!
+                        //note.resources.ref().erase()
+                    }
+                }
+                catch(qevercloud::EDAMNotFoundException&)
+                {
+                }
+            }
+        }
+
+
+        // recreating resources
+
+        QPointF offset;
+        QImage img (model->getMapEditor()->getImage(offset));
+
+        // Creation of image resource
+        qevercloud::Resource resImg;
+        resImg.mime = QString("image/png");
+        resImg.height = img.height();
+        resImg.width = img.width();
+
+        qevercloud::Data resImgData;
+        QByteArray byteArr;
+        QBuffer buff(&byteArr);
+        img.save(&buff, "PNG");
+
+        resImgData.body = byteArr;
+        resImgData.size = byteArr.size();
+        resImgData.bodyHash = QCryptographicHash::hash(byteArr, QCryptographicHash::Algorithm::Md5);
+
+        resImg.data = resImgData;
+
+        qevercloud::ResourceAttributes resImgAttrs;
+        resImgAttrs.fileName = model->getFileName();
+        //resImgAttrs.attachment = true;
+
+        resImg.attributes = resImgAttrs;
+
+
+        // Creation of file resource
+        qevercloud::Resource resFile;
+        resFile.mime = QString("application/octet-stream");
+
+        qevercloud::Data resFileData;
+
+        byteArr.clear();
+        QFile file(model->getFilePath());
+        if (file.open(QIODevice::ReadOnly))
+            byteArr = file.readAll();
+
+        resFileData.body = byteArr;
+        resFileData.size = byteArr.size();
+        resFileData.bodyHash = QCryptographicHash::hash(byteArr, QCryptographicHash::Algorithm::Md5);
+
+        resFile.data = resFileData;
+
+        qevercloud::ResourceAttributes resFileAttrs;
+        resFileAttrs.fileName = model->getFileName();
+        resImgAttrs.attachment = true;
+
+        resFile.attributes = resFileAttrs;
+
+
+        QList <qevercloud::Resource> resources;
+        resources.append(resImg);
+        resources.append(resFile);
+
+        note.resources = resources;
+
+        //note.resources.ref().clear();
+
+        // replacing old hashes with new
+
+
+        // TODO: What if user has already deleted sections with hashes? Must create again!
+        if(!resImgHashOld.isEmpty())
+            note.content.ref().replace(resImgHashOld, resImgData.bodyHash.ref().toHex());
+        if(!resFileHashOld.isEmpty())
+            note.content.ref().replace(resFileHashOld, resFileData.bodyHash.ref().toHex());
+
+
+//        note.content = QString("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n")
+//                + "<!DOCTYPE en-note SYSTEM \"http://xml.evernote.com/pub/enml2.dtd\">\n"
+//                + "<en-note>"
+//                + "<span style=\"vym:tree\">Here put the inner HTML content"
+//                + "<div>TODO: mmap represented as tree</div>"
+//                + "</span>"
+//                //+ "<en-media type=\"image/png\" hash=\"" + resImgData.bodyHash.ref().toHex() + "\"/>"
+//                + "<br/>"
+//                //+ "<en-media type=\"application/octet-stream\" hash=\"" + resFileData.bodyHash.ref().toHex() + "\"/>"
+//                + "</en-note>";
+
+        note = ns->updateNote(note, authToken);
+
+        qevercloud::Guid guidNote = note.guid;
+        qevercloud::Guid guidImg = note.resources.ref()[0].guid;
+        qevercloud::Guid guidFile = note.resources.ref()[1].guid;
+
+        model->setEnNoteGuid(guidNote); // TODO: Drop it in the mmap when saving as. Or use mmap name as additional criterion
+        ns->setResourceApplicationDataEntry(guidImg, "vym-resource", "vym-image", authToken);
+        ns->setResourceApplicationDataEntry(guidFile, "vym-resource", "vym-file", authToken);
+
     }
 }
 

@@ -275,6 +275,7 @@ QString VymModel::saveToDir(const QString &tmpdir, const QString &prefix, bool w
 		  xml.attribut("title",title) +
 		  xml.attribut("comment",comment) +
 		  xml.attribut("date",getDate()) +
+          xml.attribut("enNoteGuid",enNoteGuid) +
 		  xml.attribut("branchCount", QString().number(branchCount())) +
 		  xml.attribut("backgroundColor", mapEditor->getScene()->backgroundBrush().color().name() ) +
 		  xml.attribut("defaultFont", defaultFont.toString() ) +
@@ -1763,7 +1764,7 @@ void VymModel::setComment (const QString &s)
     comment=s;
 }
 
-QString VymModel::getComment ()
+qevercloud::Guid VymModel::getComment()
 {
     return comment;
 }
@@ -1785,6 +1786,16 @@ int VymModel::branchCount()
 	nextBranch(cur,prev);
     }
     return c;
+}
+
+void VymModel::setEnNoteGuid(const qevercloud::Guid &g)
+{
+    enNoteGuid = g;
+}
+
+qevercloud::Guid VymModel::getEnNoteGuid()
+{
+    return enNoteGuid;
 }
 
 void VymModel::setSortFilter (const QString &s)

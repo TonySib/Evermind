@@ -19,6 +19,8 @@
 #include "treemodel.h"
 #include "vymlock.h"
 
+#include "../../QEverCloud-master/QEverCloud/headers/QEverCloud.h"
+
 class AttributeItem;
 class BranchItem;
 class FindResultModel;
@@ -47,6 +49,7 @@ private:
     QString author;
     QString comment;
     QDate date;
+    qevercloud::Guid enNoteGuid;
 
     static uint idLast;	    //! the last used unique ID
     uint modelID;
@@ -307,6 +310,8 @@ public:
     QString getComment ();
     QString getDate();
     int branchCount();
+    void setEnNoteGuid (const qevercloud::Guid &);
+    qevercloud::Guid getEnNoteGuid ();
 
     void setSortFilter (const QString &);
     QString getSortFilter ();

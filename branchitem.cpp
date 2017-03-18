@@ -19,9 +19,9 @@ BranchItem::BranchItem(const QList<QVariant> &data, TreeItem *parent):MapItem (d
     // Set type if parent is known yet 
     // if not, type is set in insertBranch or TreeItem::appendChild
     if (parent==rootItem)
-	setType (MapCenter);
+        setType (MapCenter);
     else
-	setType (Branch);
+        setType (Branch);
 
     scrolled=false;
     tmpUnscrolled=false;
@@ -97,25 +97,25 @@ QString BranchItem::saveToDir (const QString &tmpdir,const QString &prefix, cons
     
     QString scrolledAttr;
     if (scrolled) 
-	scrolledAttr=attribut ("scrolled","yes");
+        scrolledAttr=attribut ("scrolled","yes");
     else
-	scrolledAttr="";
+        scrolledAttr="";
 
     // save area, if not scrolled   // not needed if HTML is rewritten...
 				    // also we could check if _any_ of parents is scrolled
     QString areaAttr;
     if (mo && parentItem->isBranchLikeType() && !((BranchItem*)parentItem)->isScrolled() )
     {
-	qreal x=mo->getAbsPos().x();
-	qreal y=mo->getAbsPos().y();
-	areaAttr=
-	    attribut("x1",QString().setNum(x-offset.x())) +
-	    attribut("y1",QString().setNum(y-offset.y())) +
-	    attribut("x2",QString().setNum(x+mo->width()-offset.x())) +
-	    attribut("y2",QString().setNum(y+mo->height()-offset.y()));
+        qreal x=mo->getAbsPos().x();
+        qreal y=mo->getAbsPos().y();
+        areaAttr=
+            attribut("x1",QString().setNum(x-offset.x())) +
+            attribut("y1",QString().setNum(y-offset.y())) +
+            attribut("x2",QString().setNum(x+mo->width()-offset.x())) +
+            attribut("y2",QString().setNum(y+mo->height()-offset.y()));
 
     } else
-	areaAttr="";
+        areaAttr="";
     
     QString elementName;
     if (parentItem==rootItem)
@@ -131,17 +131,17 @@ QString BranchItem::saveToDir (const QString &tmpdir,const QString &prefix, cons
     // Save rotation
     QString rotAttr;
     if (mo && mo->getRotation() !=0 )
-	rotAttr=attribut ("rotation",QString().setNum (mo->getRotation() ) );
+        rotAttr=attribut ("rotation",QString().setNum (mo->getRotation() ) );
 
     s=beginElement (elementName
-	+ getMapAttr()
-	+ getGeneralAttr()
-	+ scrolledAttr 
-	+ getIncludeImageAttr() 
-    + rotAttr
-    + layoutAttr
-	+ idAttr
-	);
+                    + getMapAttr()
+                    + getGeneralAttr()
+                    + scrolledAttr
+                    + getIncludeImageAttr()
+                    + rotAttr
+                    + layoutAttr
+                    + idAttr
+                    );
     incIndent();
 
     // save heading
@@ -179,16 +179,16 @@ QString BranchItem::saveToDir (const QString &tmpdir,const QString &prefix, cons
     TreeItem *ti=getBranchNum(i);
     while (ti)
     {
-	s+=getBranchNum(i)->saveToDir(tmpdir,prefix,offset,tmpLinks);
-	i++;
-	ti=getBranchNum(i);
+        s+=getBranchNum(i)->saveToDir(tmpdir,prefix,offset,tmpLinks);
+        i++;
+        ti=getBranchNum(i);
     }	
 
     // Mark Links for save
     for (int i=0; i<xlinkCount(); ++i)
     {
-	Link *l=getXLinkItemNum (i)->getLink();
-	if (l && !tmpLinks.contains (l)) tmpLinks.append (l);
+        Link *l=getXLinkItemNum (i)->getLink();
+        if (l && !tmpLinks.contains (l)) tmpLinks.append (l);
     }
     decIndent();
     s += endElement (elementName);
@@ -200,10 +200,10 @@ void BranchItem::updateVisibility()
     // Needed to hide relinked branch, if parent is scrolled
     if (mo)
     {
-	if (hasScrolledParent(this) || hidden)
-	    mo->setVisibility (false);
-	else	
-	    mo->setVisibility (true);
+        if (hasScrolledParent(this) || hidden)
+            mo->setVisibility (false);
+        else
+            mo->setVisibility (true);
     }
 }
 
@@ -218,9 +218,9 @@ void BranchItem::updateTaskFlag()
     systemFlags.deactivateGroup ("system-tasks");
     if (task)
     {
-	QString s="system-" + task->getIconString();
-	systemFlags.activate (s);
-	model->emitDataChanged(this);
+        QString s="system-" + task->getIconString();
+        systemFlags.activate (s);
+        model->emitDataChanged(this);
     } 
 }
 
@@ -288,9 +288,9 @@ bool BranchItem::hasScrolledParent(BranchItem *start)
 
     BranchItem* bi=(BranchItem*)parentItem;
     if (bi && bi!=rootItem ) 
-	return bi->hasScrolledParent(start);
+        return bi->hasScrolledParent(start);
     else
-	return false;
+        return false;
 }
 
 bool BranchItem::tmpUnscroll(BranchItem *start)
@@ -306,11 +306,11 @@ bool BranchItem::tmpUnscroll(BranchItem *start)
     // Unscroll myself
     if (start !=this && scrolled)
     {
-	tmpUnscrolled=true;
-	systemFlags.activate("system-tmpUnscrolledRight");
-	toggleScroll();
-	model->emitDataChanged (this); 
-	result=true;
+        tmpUnscrolled=true;
+        systemFlags.activate("system-tmpUnscrolledRight");
+        toggleScroll();
+        model->emitDataChanged (this);
+        result=true;
     }	
     return result;
 }
@@ -326,11 +326,11 @@ bool BranchItem::resetTmpUnscroll()
     // Unscroll myself
     if (tmpUnscrolled)
     {
-	tmpUnscrolled=false;
-	systemFlags.deactivate("system-tmpUnscrolledRight");
-	toggleScroll();
-	model->emitDataChanged (this);
-	result=true;
+        tmpUnscrolled=false;
+        systemFlags.deactivate("system-tmpUnscrolledRight");
+        toggleScroll();
+        model->emitDataChanged (this);
+        result=true;
     }	
     return result;
 }
@@ -398,9 +398,9 @@ QString BranchItem::getIncludeImageAttr()
 {
     QString a;
     if (includeImagesVer)
-	a=attribut ("incImgV","true");
+        a=attribut ("incImgV","true");
     if (includeImagesHor)
-	a+=attribut ("incImgH","true");
+        a+=attribut ("incImgH","true");
     return a;	
 }
 
@@ -409,12 +409,12 @@ BranchItem* BranchItem::getFramedParentBranch(BranchItem *start)
     BranchObj *bo=getBranchObj();
     if (bo && bo->getFrameType() != FrameObj::NoFrame)
     {
-	if (bo->getFrame()->getFrameIncludeChildren() ) return this;
+        if (bo->getFrame()->getFrameIncludeChildren() ) return this;
         if (this == start) return this;
     } 
     BranchItem* bi=(BranchItem*)parentItem;
     if (bi && bi!=rootItem ) 
-	return bi->getFramedParentBranch(start);
+        return bi->getFramedParentBranch(start);
     else
 	return NULL;
 }
@@ -430,9 +430,9 @@ bool BranchItem::getFrameIncludeChildren()
 {
     BranchObj *bo=getBranchObj();
     if (bo) 
-	return bo->getFrame()->getFrameIncludeChildren();
+        return bo->getFrame()->getFrameIncludeChildren();
     else	
-	return includeChildren;
+        return includeChildren;
 }
 
 void BranchItem::setLastSelectedBranch()
@@ -440,16 +440,16 @@ void BranchItem::setLastSelectedBranch()
     int d=depth();
     if (d>=0)
     {
-	if (d==1)
-	    // Hack to save an additional lastSelected for mapcenters in MapEditor
-	    // depending on orientation
-	    // this allows to go both left and right from there
-	    if (mo && ((BranchObj*)mo)->getOrientation()==LinkableMapObj::LeftOfCenter)
-	    {
-		((BranchItem*)parentItem)->lastSelectedBranchNumAlt=parentItem->num(this);
-		return;
-	    }
-	((BranchItem*)parentItem)->lastSelectedBranchNum=parentItem->num(this);
+        if (d==1)
+            // Hack to save an additional lastSelected for mapcenters in MapEditor
+            // depending on orientation
+            // this allows to go both left and right from there
+            if (mo && ((BranchObj*)mo)->getOrientation()==LinkableMapObj::LeftOfCenter)
+            {
+                ((BranchItem*)parentItem)->lastSelectedBranchNumAlt=parentItem->num(this);
+                return;
+            }
+        ((BranchItem*)parentItem)->lastSelectedBranchNum=parentItem->num(this);
     }
 }
 
@@ -461,9 +461,9 @@ void BranchItem::setLastSelectedBranch(int i)
 BranchItem* BranchItem::getLastSelectedBranch()
 {
     if (lastSelectedBranchNum>=branchCounter)
-	return getBranchNum (branchCounter-1);
+        return getBranchNum (branchCounter-1);
     else    
-	return getBranchNum (lastSelectedBranchNum);
+        return getBranchNum (lastSelectedBranchNum);
 }
 
 BranchItem* BranchItem::getLastSelectedBranchAlt()
@@ -480,39 +480,39 @@ TreeItem* BranchItem::findMapItem (QPointF p, TreeItem* excludeTI)
     TreeItem *ti;
     for (int i=0; i<branchCount(); ++i)
     {	
-	ti=getBranchNum(i)->findMapItem(p, excludeTI);
-	if (ti != NULL) return ti;
+        ti=getBranchNum(i)->findMapItem(p, excludeTI);
+        if (ti != NULL) return ti;
     }
     
     // Search images
     ImageItem *ii;
     for (int i=0; i<imageCount(); ++i )
     {
-	ii=getImageNum (i);
-	MapObj *mo=ii->getMO();
-	if (mo && mo->isInClickBox(p) && 
-	    (ii != excludeTI) && 
-	    this!= excludeTI &&
-	    mo->isVisibleObj() 
-	) return ii;
+        ii=getImageNum (i);
+        MapObj *mo=ii->getMO();
+        if (mo && mo->isInClickBox(p) &&
+            (ii != excludeTI) &&
+            this!= excludeTI &&
+            mo->isVisibleObj()
+        ) return ii;
     }
 
     // Search myself
     if (getBranchObj()->isInClickBox (p) && (this != excludeTI) && getBranchObj()->isVisibleObj() ) 
-	return this;
+        return this;
 
 
     // Search attributes
     AttributeItem *ai;
     for (int i=0; i<attributeCount(); ++i )
     {
-	ai=getAttributeNum (i);
-	MapObj *mo=ai->getMO();
-	if (mo && mo->isInClickBox(p) && 
-	    (ai != excludeTI) && 
-	    this!= excludeTI &&
-	    mo->isVisibleObj() 
-	) return ai;
+        ai=getAttributeNum (i);
+        MapObj *mo=ai->getMO();
+        if (mo && mo->isInClickBox(p) &&
+            (ai != excludeTI) &&
+            this!= excludeTI &&
+            mo->isVisibleObj()
+        ) return ai;
     }
     return NULL;
 }
@@ -522,12 +522,12 @@ void BranchItem::updateStyles(const bool &keepFrame)
     // Update styles when relinking branches
     if (mo)
     { 
-	BranchObj *bo=getBranchObj();
-	if ( parentItem != rootItem)
-	    bo->setParObj ( (LinkableMapObj*) ( ((MapItem*)parentItem)->getMO() ) );
-	else
-	    bo->setParObj (NULL);
-	bo->setDefAttr(BranchObj::MovedBranch,keepFrame);
+        BranchObj *bo=getBranchObj();
+        if ( parentItem != rootItem)
+            bo->setParObj ( (LinkableMapObj*) ( ((MapItem*)parentItem)->getMO() ) );
+        else
+            bo->setParObj (NULL);
+        bo->setDefAttr(BranchObj::MovedBranch,keepFrame);
     }
 }
 
@@ -542,9 +542,9 @@ BranchObj* BranchItem::createMapObj(QGraphicsScene *scene)
 
     if (parentItem==rootItem)
     {
-	newbo=new BranchObj(NULL,this);
-	mo=newbo;
-	scene->addItem (newbo);
+        newbo=new BranchObj(NULL,this);
+        mo=newbo;
+        scene->addItem (newbo);
     } else
     {
 	newbo=new BranchObj( ((MapItem*)parentItem)->getMO(),this);
@@ -566,7 +566,7 @@ BranchObj* BranchItem::createMapObj(QGraphicsScene *scene)
 
     if (!getHeading().isEmpty() ) 
     {
-	newbo->updateData();	
+        newbo->updateData();
         newbo->setColor (heading.getColor());
     }	
 	

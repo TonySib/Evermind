@@ -128,6 +128,7 @@ private slots:
     bool fileCloseMap(int i = -1);  // Optionally pass number of tab
     void filePrint();
     bool fileExitVYM();
+    void fileSaveToEvernote();
 
 public slots:
     void editUndo();	

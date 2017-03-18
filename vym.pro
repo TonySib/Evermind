@@ -149,7 +149,9 @@ HEADERS	+= \
     xml-vym.h \
     xml-freemind.h \
     xmlobj.h\
-    xsltproc.h 
+    xsltproc.h \ 
+    evernoteauth.h \
+    evernoteauthdata.h
 
 SOURCES	+= \
     aboutdialog.cpp \
@@ -241,7 +243,8 @@ SOURCES	+= \
     xml-vym.cpp \
     xml-freemind.cpp \
     xmlobj.cpp \
-    xsltproc.cpp 
+    xsltproc.cpp \ 
+    evernoteauth.cpp
 
 FORMS = \
     attributewidget.ui \
@@ -255,6 +258,7 @@ FORMS = \
     scripteditor.ui \
     showtextdialog.ui \
     warningdialog.ui \
+    evernoteauth.ui
 
 isEmpty( PREFIX ) {
     PREFIX = /usr/local
@@ -286,3 +290,21 @@ support.files += LICENSE.txt
 support.path = $${DATADIR}/vym
 INSTALLS += support 
 
+
+#win32:CONFIG(release, debug|release): LIBS += -L$$PWD/../../QEverCloud-master/build-QEverCloud-Desktop_Qt_5_7_1_MSVC2013_32bit-Release/bin/ -llibQEverCloud
+#else:win32:CONFIG(debug, debug|release): LIBS += -L$$PWD/../../QEverCloud-master/build-QEverCloud-Desktop_Qt_5_7_1_MSVC2013_32bit-Debug/bin/ -llibQEverCloud
+#else:unix: LIBS += -L$$PWD/../../QEverCloud-master/build-QEverCloud-Desktop_Qt_5_7_1_MSVC2013_32bit-Debug/bin/ -llibQEverCloud
+
+#INCLUDEPATH += $$PWD/../../QEverCloud-master/QEverCloud/headers
+#DEPENDPATH += $$PWD/../../QEverCloud-master/QEverCloud/headers
+
+#win32-g++:CONFIG(release, debug|release): PRE_TARGETDEPS += $$PWD/../../QEverCloud-master/build-QEverCloud-Desktop_Qt_5_7_1_MSVC2013_32bit-Release/bin/liblibQEverCloud.a
+#else:win32-g++:CONFIG(debug, debug|release): PRE_TARGETDEPS += $$PWD/../../QEverCloud-master/build-QEverCloud-Desktop_Qt_5_7_1_MSVC2013_32bit-Debug/bin/liblibQEverCloud.a
+#else:win32:!win32-g++:CONFIG(release, debug|release): PRE_TARGETDEPS += $$PWD/../../QEverCloud-master/build-QEverCloud-Desktop_Qt_5_7_1_MSVC2013_32bit-Release/bin/libQEverCloud.lib
+#else:win32:!win32-g++:CONFIG(debug, debug|release): PRE_TARGETDEPS += $$PWD/../../QEverCloud-master/build-QEverCloud-Desktop_Qt_5_7_1_MSVC2013_32bit-Debug/bin/libQEverCloud.lib
+#else:unix: PRE_TARGETDEPS += $$PWD/../../QEverCloud-master/build-QEverCloud-Desktop_Qt_5_7_1_MSVC2013_32bit-Debug/bin/liblibQEverCloud.a
+
+unix|win32: LIBS += -L$$PWD/../../QEverCloud-master/build-QEverCloud-Desktop_Qt_5_7_1_MSVC2013_32bit-Debug/bin/ -llibQEverCloud
+
+INCLUDEPATH += $$PWD/../../QEverCloud-master/QEverCloud/headers
+DEPENDPATH += $$PWD/../../QEverCloud-master/QEverCloud/headers
