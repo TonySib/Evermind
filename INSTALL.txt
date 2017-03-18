@@ -1,0 +1,12 @@
+Installation of vym - view your mind
+====================================
+
+Please check the vym webpage for installation tipps:
+
+    http://www.insilmaril.de/vym
+
+For general questions please contact the vym mailinglist:
+
+    vym-forum@lists.sourceforge.net
+
+
