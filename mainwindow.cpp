@@ -53,7 +53,7 @@
 #include "warningdialog.h"
 #include "xlinkitem.h"
 
-#include "evernoteauth.h"
+//#include "evernoteauth.h"
 #include "evernoteauthdata.h"
 
 #include "../../QEverCloud-master/QEverCloud/headers/QEverCloud.h"
