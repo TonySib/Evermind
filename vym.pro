@@ -150,7 +150,6 @@ HEADERS	+= \
     xml-freemind.h \
     xmlobj.h\
     xsltproc.h \ 
-    evernoteauth.h \
     evernoteauthdata.h
 
 SOURCES	+= \
@@ -243,8 +242,7 @@ SOURCES	+= \
     xml-vym.cpp \
     xml-freemind.cpp \
     xmlobj.cpp \
-    xsltproc.cpp \ 
-    evernoteauth.cpp
+    xsltproc.cpp
 
 FORMS = \
     attributewidget.ui \
@@ -257,8 +255,7 @@ FORMS = \
     lockedfiledialog.ui \
     scripteditor.ui \
     showtextdialog.ui \
-    warningdialog.ui \
-    evernoteauth.ui
+    warningdialog.ui
 
 isEmpty( PREFIX ) {
     PREFIX = /usr/local
