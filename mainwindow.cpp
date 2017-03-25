@@ -4531,7 +4531,7 @@ void Main::fileSaveToEvernote()
         note.content = QString("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n")
                 + "<!DOCTYPE en-note SYSTEM \"http://xml.evernote.com/pub/enml2.dtd\">\n"
                 + "<en-note>"
-                + "<span style=\"vym:tree\">Here put the inner HTML content"
+                + "<span style=\"vym:tree\">"
                 + "<div>TODO: mmap represented as tree</div>"
                 + "</span>"
                 + "<en-media type=\"image/png\" hash=\"" + resImgData.bodyHash.ref().toHex() + "\"/>"
@@ -4549,7 +4549,7 @@ void Main::fileSaveToEvernote()
         ns->setResourceApplicationDataEntry(guidImg, "vym-resource", "vym-image", authToken);
         ns->setResourceApplicationDataEntry(guidFile, "vym-resource", "vym-file", authToken);
 
-        qevercloud::UserStore userStore("sandbox.evernote.com", authToken);
+        qevercloud::UserStore userStore(EVERNOTE_SRV_URL, authToken);
         qevercloud::User user = userStore.getUser(authToken);
 
         QString noteLink = QString("evernote:///view/")
@@ -4559,6 +4559,7 @@ void Main::fileSaveToEvernote()
                                    + noteCreated.guid + "/";
 
         // TODO: Store GUID in refs??? Cause name of note can be changed at every moment
+        // Yes. Obtain guid when pasting notes, using note name and creation date
         QList<QString> enNotes;
         findAllEnNotes(model->getRootItem(), enNotes);
 
@@ -4589,11 +4590,13 @@ void Main::fileSaveToEvernote()
                     QString linkXml = QString("<span style=\"vym:context:")
                                               + noteCreated.guid
                                               + "\">"
+                                              + "This note is a part of Vym map: "
                                               + "<a href=\""
                                               + noteLink
                                               + "\">"
                                               + noteCreated.title
                                               + "</a>"
+                                              + "<hr/>"
                                               + "</span>";
 
                     bool hasBody = noteFound.content.ref().contains("<en-note>");
@@ -4721,7 +4724,7 @@ void Main::fileSaveToEvernote()
 //        note.content = QString("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n")
 //                + "<!DOCTYPE en-note SYSTEM \"http://xml.evernote.com/pub/enml2.dtd\">\n"
 //                + "<en-note>"
-//                + "<span style=\"vym:tree\">Here put the inner HTML content"
+//                + "<span style=\"vym:tree\">"
 //                + "<div>TODO: mmap represented as tree</div>"
 //                + "</span>"
 //                //+ "<en-media type=\"image/png\" hash=\"" + resImgData.bodyHash.ref().toHex() + "\"/>"
@@ -4738,6 +4741,76 @@ void Main::fileSaveToEvernote()
         model->setEnNoteGuid(guidNote); // TODO: Drop it in the mmap when saving as. Or use mmap name as additional criterion
         ns->setResourceApplicationDataEntry(guidImg, "vym-resource", "vym-image", authToken);
         ns->setResourceApplicationDataEntry(guidFile, "vym-resource", "vym-file", authToken);
+
+        ////////////////////////////////////////////////////////////////////////////////////////////
+        qevercloud::UserStore userStore(EVERNOTE_SRV_URL, authToken);
+        qevercloud::User user = userStore.getUser(authToken);
+
+        QString noteLink = QString("evernote:///view/")
+                                   + QString::number(user.id) + "/"
+                                   + user.shardId + "/"
+                                   + note.guid + "/"
+                                   + note.guid + "/";
+
+        // TODO: Store GUID in refs??? Cause name of note can be changed at every moment
+        // Yes. Obtain guid when pasting notes, using note name and creation date
+        QList<QString> enNotes;
+        findAllEnNotes(model->getRootItem(), enNotes);
+
+        for(int i=0; i<enNotes.size(); ++i)
+        {
+            QString noteName = enNotes[i];
+
+            qevercloud::NoteFilter filter;
+            //filter.words = "showNotes" + " " + "/q" + " " + noteName;
+            //filter.words = QString("/q") + " " + noteName;
+            filter.words = noteName;
+
+            // Empty, cause guid seems to be returned by default
+            qevercloud::NotesMetadataResultSpec resSpec;
+
+            qevercloud::NotesMetadataList searchRes = ns->findNotesMetadata(filter, 0, 1, resSpec);
+
+            if(0 < searchRes.totalNotes)
+            {
+                QString guid = searchRes.notes[0].guid;
+
+                qevercloud::Note noteFound = ns->getNote(guid, true, true, true, true, authToken);
+
+                if(noteFound.title == noteName)
+                {
+
+                    // adding section with ref to note with mind map
+                    QString linkXml = QString("<span style=\"vym:context:")
+                                              + note.guid
+                                              + "\">"
+                                              + "This note is a part of Vym map: "
+                                              + "<a href=\""
+                                              + noteLink
+                                              + "\">"
+                                              + note.title
+                                              + "</a>"
+                                              + "<hr/>"
+                                              + "</span>";
+
+
+                    if(!noteFound.content.ref().contains(linkXml))
+                    {
+                        bool hasBody = noteFound.content.ref().contains("<en-note>");
+
+                        if(hasBody)
+                            noteFound.content.ref().replace("<en-note>", QString("<en-note>") + linkXml);
+                        else
+                            noteFound.content.ref().replace("<en-note/>", QString("<en-note>") + linkXml + QString("</en-note>"));
+
+                        ns->updateNote(noteFound, authToken);
+                    }
+
+
+                    // TODO: collect all the notes found, and erase context reference from notes that not found
+                }
+            }
+        }
 
     }
 }
